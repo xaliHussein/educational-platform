@@ -18,7 +18,9 @@ class UserSeeder extends Seeder
             "name" => "ali hussein",
             "password" => bcrypt("fffjjjqq"),
             "user_type" => 0,
+            "random_code" => 0,
             "account_status" => 1,
         ]);
+
     }
 }

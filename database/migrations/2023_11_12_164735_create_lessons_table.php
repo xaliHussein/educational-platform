@@ -13,11 +13,15 @@ return new class extends Migration
     {
         Schema::create('lessons', function (Blueprint $table) {
             $table->uuid('id')->primary();
+            $table->uuid("category_id");
+            $table->uuid("user_id");
             $table->string('title');
             $table->text('content')->nallable();
-            $table->string('video');
-            $table->string('image');
-            $table->uuid("category_id");
+            $table->integer("upload_type"); // 0 youtub - 1 platform
+            $table->string("video_url")->nallable();
+            $table->string('video')->nallable();
+            $table->string('image')->nallable();
+
             $table->timestamps();
         });
     }

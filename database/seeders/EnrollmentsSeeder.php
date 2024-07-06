@@ -14,9 +14,16 @@ class EnrollmentsSeeder extends Seeder
     public function run(): void
     {
         Enrollments::create([
-            "category_id" => "989f7622-76b1-4eb9-b43c-6dbbff75981d",
-            "user_id" => "15d4e2bc-edd7-4ceb-a04f-e1b384af991b",
-            "access_type" => 1,
+            "category_id" => "d0749f4f-2572-443d-a817-0c730083b17b",
+            "user_id" => "62362711-b55d-4b76-927c-c516f649a801",
+            "payment_type" => 0,
+            "price" => 50000,
+        ]);
+        Enrollments::create([
+            "category_id" => "d0749f4f-2572-443d-a817-0c730083b17b",
+            "user_id" => "62362711-b55d-4b76-927c-c516f649a801",
+            "payment_type" => 0,
+            "price" => 60000,
         ]);
     }
 }

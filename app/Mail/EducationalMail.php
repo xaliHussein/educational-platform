@@ -17,9 +17,12 @@ class EducationalMail extends Mailable
      * Create a new message instance.
      */
     public $mail_data;
-    public function __construct($mail_data)
+    public $subject;
+
+    public function __construct($mail_data,$subject)
     {
         $this->mail_data= $mail_data;
+        $this->subject = $subject;
     }
 
     /**
@@ -28,7 +31,7 @@ class EducationalMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'التحقق من البريد الالكتروني',
+            subject: $this->subject,
         );
     }
 

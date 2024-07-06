@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('image');
             $table->string('title');
             $table->string('time_course');
+            $table->string('time_type');
             $table->text('description')->nullable();
             $table->double("price")->nullable();
             $table->integer("course_type"); // 0 free - 1 payment

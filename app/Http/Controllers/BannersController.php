@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use PDF;
+use File;
 use App\Traits\Filter;
 use App\Models\Banners;
 use App\Traits\OrderBy;
 use App\Traits\Pagination;
+use App\Models\Enrollments;
 use App\Traits\UploadImage;
 use App\Traits\SendResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class BannersController extends Controller
 {
@@ -31,18 +36,48 @@ class BannersController extends Controller
     {
         $request = $request->json()->all();
         $validator = Validator::make($request, [
-            'title' => 'required',
+            'value' => 'required',
+            'image' => 'required',
         ], [
-            'title.required' => 'يرجى ادخال اسم الكورس',
+            'value.required' => 'يرجى ادخال  قيمه',
+            'image.required' => 'لم تضف صورة  الاعلان',
         ]);
         if ($validator->fails()) {
             return $this->send_response(400, "حصل خطأ في المدخلات", $validator->errors(), []);
         }
         $data = [];
-        $data['title'] = $request['title'];
-        $data['image'] = $this->uploadPicture($request['image'], '/images/courses/');
-        $courses = Courses::create($data);
+        $data['value'] = $request['value'];
+        $data['image'] = $this->uploadPicture($request['image'], '/images/banners/');
+        $banners = Banners::create($data);
 
-        return $this->send_response("200", 'تم عملية اضافة الكورس بنجاح', [], Courses::find($courses->id));
+        return $this->send_response("200", 'تم عملية اضافة اعلان بنجاح', [], Banners::find($banners->id));
     }
+
+    public function editBanners(Request $request)
+    {
+        $request = $request->json()->all();
+        $banners = Banners::find($request['id']);
+
+        $data = [];
+        if (array_key_exists('image', $request)) {
+            $data['image'] = $this->uploadPicture($request['image'], '/images/banners/');
+        }
+        $data["value"] = $request['value'];
+        $banners->update($data);
+
+        return $this->send_response(200, 'تم تعديل الاعلان بنجاح', [], Banners::find($banners->id));
+    }
+
+    public function deleteBanners(Request $request)
+    {
+        $banners = Banners::find($request["id"]);
+        if (File::exists(public_path(), $banners->image)) {
+            $image_path = public_path() . $banners->image;
+            unlink($image_path);
+        }
+        $banners->delete();
+        return $this->send_response(200, 'تم حذف الاعلان بنجاح', [], []);
+    }
+
+
 }

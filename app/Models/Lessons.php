@@ -13,9 +13,13 @@ class Lessons extends Model
 
     protected $guarded = [];
 
-    protected $with = ['Course'];
+    protected $with = ['Course','User'];
     public function Course()
     {
         return $this->belongsTo(Course_Category::class, 'category_id');
+    }
+    public function User()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

@@ -13,7 +13,7 @@ class BannersSeeder extends Seeder
     public function run(): void
     {
         Banners::create([
-            'image'=>'/images/banner/cover.jpg',
+            'image'=>'/images/banners/cover.jpg',
             'value'=>'link'
         ]);
     }

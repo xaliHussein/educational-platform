@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Traits\Pagination;
 use App\Traits\UploadImage;
 use App\Traits\SendResponse;
+use App\Traits\Search;
 use Illuminate\Http\Request;
 use App\Mail\EducationalMail;
 use Illuminate\Support\Facades\Hash;
@@ -15,7 +16,10 @@ use Illuminate\Support\Facades\Validator;
 
 class UsersController extends Controller
 {
-    use SendResponse, UploadImage, Pagination;
+    use SendResponse;
+    use UploadImage;
+    use Pagination;
+    use Search;
 
     public function random_code()
     {
@@ -42,11 +46,26 @@ class UsersController extends Controller
             if ($user->account_status == 1) {
                 $token = $user->createToken('educational_platform')->accessToken;
                 return $this->send_response(200, 'تم تسجيل الدخول بنجاح', [], $user, $token);
+            } elseif($user->account_status == 2) {
+                return $this->send_response(400, 'تم حظر حسابك يرجى التواصل مع المالك', [], null, null);
             } else {
-                return $this->send_response(400, 'يرجى تاكيد عنوان بريدك الالكتروني', null, null, null);
+                $data = [];
+                $random_code = $this->random_code();
+                $data = [
+                    'random_code' => $random_code,
+                ];
+                $user->update($data);
+                $mail_data = [
+                    "title" => "مرحبا " . $user->email,
+                    "body" => " رمز التحقق الخاص بك :" . $random_code,
+                ];
+                $subject = 'التحقق من البريد الالكتروني';
+                Mail::to($user->email)->send(new EducationalMail($mail_data, $subject));
+
+                return $this->send_response(200, 'يرجى تاكيد عنوان بريدك الالكتروني', [], $user, null);
             }
         } else {
-            return $this->send_response(400, 'هناك مشكلة تحقق من تطابق المدخلات', null, null, null);
+            return $this->send_response(400, "ادخلت اسم مستخدم او كلمة مرور غير صحيحة", [], null, null);
         }
     }
 
@@ -82,10 +101,11 @@ class UsersController extends Controller
         }
         $user = User::create($data);
         $mail_data = [
-            "title" => "مرحبا " . $request['name'],
+            "title" => "مرحبا " . $request['email'],
             "body" => " رمز التحقق الخاص بك :" . $random_code,
         ];
-        Mail::to($request['email'])->send(new EducationalMail($mail_data));
+        $subject = 'التحقق من البريد الالكتروني';
+        Mail::to($request['email'])->send(new EducationalMail($mail_data, $subject));
         return $this->send_response(200, 'يرجى التحقق من البريد الالكتروني', [], User::find($user->id));
     }
 
@@ -95,13 +115,42 @@ class UsersController extends Controller
         return $this->send_response(200, 'تم احضار معلومات المستخدم', [], $user);
     }
 
+    public function getUsers()
+    {
+
+        $users = User::select("*");
+        if (isset($_GET["query"])) {
+            $users = $this->search($users, 'users');
+        }
+        if (isset($_GET["filter"])) {
+            $filter = json_decode($_GET["filter"]);
+            $users = $this->filter($users, $_GET["filter"]);
+        }
+
+        if (isset($_GET["order_by"])) {
+            $users = $this->order_by($users, $_GET);
+        }
+        if (!isset($_GET['skip'])) {
+            $_GET['skip'] = 0;
+        }
+        if (!isset($_GET['limit'])) {
+            $_GET['limit'] = 10;
+        }
+
+        $res = $this->paging($users->orderBy("created_at", "ASC"), $_GET['skip'], $_GET['limit']);
+        return $this->send_response(200, 'تم احضار جميع المستخدمين', [], $res["model"], null, $res["count"]);
+    }
+
 
     public function sendCodeAgain(Request $request)
     {
         $request = $request->json()->all();
         $validator = Validator::make($request, [
-            'id' => 'required',
+           'id' => 'required|exists:users,id',
         ]);
+        if ($validator->fails()) {
+            return $this->send_response(400, 'فشل العملية ', $validator->errors(), []);
+        }
         $user = User::find($request["id"]);
         $data = [];
         $random_code = $this->random_code();
@@ -113,16 +162,20 @@ class UsersController extends Controller
             "title" => "مرحبا " . $user->email,
             "body" => " رمز التحقق الخاص بك :" . $random_code,
         ];
-        Mail::to($user->email)->send(new EducationalMail($mail_data));
+        $subject = 'التحقق من البريد الالكتروني';
+        Mail::to($user->email)->send(new EducationalMail($mail_data, $subject));
         return $this->send_response(200, 'تم اعادة ارسال رمز التحقق', [], null, null);
     }
     public function emailVerificationRegister(Request $request)
     {
         $request = $request->json()->all();
         $validator = Validator::make($request, [
-            'id' => 'required',
+            'id' => 'required|exists:users,id',
             'random_code' => 'required',
         ]);
+        if ($validator->fails()) {
+            return $this->send_response(400, 'فشل العملية ', $validator->errors(), []);
+        }
         $user = User::find($request["id"]);
         if ($request["random_code"] == $user->random_code) {
             $data = [];
@@ -165,7 +218,7 @@ class UsersController extends Controller
     {
         $request = $request->json()->all();
         $validator = Validator::make($request, [
-            "id" => "required",
+            'id' => 'required|exists:users,id',
             "password_old" => "required|string|max:255|min:8",
             "password_new" => "required|string|max:255|min:8",
         ], [
@@ -230,10 +283,11 @@ class UsersController extends Controller
             ];
             $user->update($data);
             $mail_data = [
-                "title" => "مرحبا " . $user->email,
+                "title" => "مرحبا " . $request["email"],
                 "body" => " رمز التحقق الخاص بك :" . $random_code,
             ];
-            Mail::to($request['email'])->send(new EducationalMail($mail_data));
+            $subject = ' اعادة تعين البريد الالكتروني';
+            Mail::to($request['email'])->send(new EducationalMail($mail_data, $subject));
 
             return $this->send_response(200, 'تم ارسال رمز التحقق', [], User::find($user->id));
         } else {
@@ -252,6 +306,9 @@ class UsersController extends Controller
             'email.required' => 'حقل البريد الالكتروني مطلوب',
             'email.unique' => ' البريد الالكتروني الذي قمت بأدخاله مستخدم سابقا',
         ]);
+        if ($validator->fails()) {
+            return $this->send_response(400, 'فشل العملية ', $validator->errors(), []);
+        }
         $user = User::find($request["id"]);
         if ($request["random_code"] == $user->random_code) {
             $data = [
@@ -263,37 +320,196 @@ class UsersController extends Controller
             return $this->send_response(400, 'ادخلت رمز تحقق غير صحيح', null, null, null);
         }
     }
+    public function sendCodeAgainUpdate(Request $request)
+    {
+        $request = $request->json()->all();
+        $validator = Validator::make($request, [
+            "email" => "required|string|unique:users,email," . $request['email'],
+        ]);
+        if ($validator->fails()) {
+            return $this->send_response(400, 'فشل العملية ', $validator->errors(), []);
+        }
+        $user = User::find($request["email"]);
+        $data = [];
+        $random_code = $this->random_code();
+        $data = [
+            'random_code' => $random_code,
+        ];
+        $user->update($data);
+        $mail_data = [
+            "title" => "مرحبا " . $request["email"],
+            "body" => " رمز التحقق الخاص بك :" . $random_code,
+        ];
+        $subject = 'التحقق من البريد الالكتروني';
+        Mail::to($request["email"])->send(new EducationalMail($mail_data, $subject));
+        return $this->send_response(200, 'تم اعادة ارسال رمز التحقق', [], null, null);
+    }
 
-    // public function addUser(Request $request)
-    // {
-    //     $request = $request->json()->all();
-    //     $validator = Validator::make($request, [
-    //         'phone_number' => 'required|unique:users,phone_number',
-    //         'user_name' => 'required|unique:users,user_name',
-    //         'password' => 'required',
-    //         'user_type' => 'required',
-    //     ], [
-    //         'phone_number.required' => 'يرجى ادخال رقم الهاتف',
-    //         'user_name.required' => 'يرجى ادخال اسم المستخدم ',
-    //         'phone_number.unique' => 'رقم الهاتف الذي قمت بأدخاله تم استخدامه سابقاً',
-    //         'user_name.unique' => 'اسم المستخدم الذي قمت بأدخاله تم استخدامه سابقاً',
-    //         'password.required' => 'يرجى ادخال كلمة المرور ',
-    //         'user_type.required' => 'يرجى ادخال  نوع المستخدم ',
-    //     ]);
-    //     if ($validator->fails()) {
-    //         return $this->send_response(400, "حصل خطأ في المدخلات", $validator->errors(), []);
-    //     }
-    //     $data = [];
-    //     $data = [
-    //         'user_name' => $request['user_name'],
-    //         'phone_number' => $request['phone_number'],
-    //         'password' => bcrypt($request['password']),
-    //         'user_type' => $request['user_type'],
-    //     ];
-    //     if (array_key_exists('image', $request)) {
-    //         $data['image'] = $this->uploadPicture($request['image'], '/images/user_images/');
-    //     }
-    //     $user = User::create($data);
-    //     return $this->send_response(200, 'تم أضافة حساب بنجاح', [], User::find($user->id));
-    // }
+    public function blockUser(Request $request)
+    {
+        $request = $request->json()->all();
+        $validator = Validator::make($request, [
+            'id' => 'required|exists:users,id',
+        ]);
+        if ($validator->fails()) {
+            return $this->send_response(400, 'فشل العملية ', $validator->errors(), []);
+        }
+        $user = User::find($request["id"]);
+
+        $data = [];
+        $data["account_status"] = 2;
+        $user->update($data);
+
+        foreach ($user->tokens as $token) {
+            $token->revoke();
+            $token->delete();
+        }
+        return $this->send_response(200, 'تم حظر المستخدم بنجاح', [], User::find($user->id), null);
+    }
+    public function openUser(Request $request)
+    {
+        $request = $request->json()->all();
+        $validator = Validator::make($request, [
+            'id' => 'required|exists:users,id',
+        ]);
+        if ($validator->fails()) {
+            return $this->send_response(400, 'فشل العملية ', $validator->errors(), []);
+        }
+        $user = User::find($request["id"]);
+
+        $data = [];
+        $data["account_status"] = 1;
+        $user->update($data);
+        return $this->send_response(200, 'تم تفعيل المستخدم بنجاح', [], User::find($user->id), null);
+    }
+    public function userUpgrade(Request $request)
+    {
+        $request = $request->json()->all();
+        $validator = Validator::make($request, [
+            'id' => 'required|exists:users,id',
+        ]);
+        if ($validator->fails()) {
+            return $this->send_response(400, 'فشل العملية ', $validator->errors(), []);
+        }
+        $user = User::find($request["id"]);
+
+        $data = [];
+        $data["user_type"] = 1;
+        $user->update($data);
+        return $this->send_response(200, 'تم ترقية المستخدم بنجاح', [], User::find($user->id), null);
+    }
+    public function CancelUserUpgrade(Request $request)
+    {
+        $request = $request->json()->all();
+        $validator = Validator::make($request, [
+            'id' => 'required|exists:users,id',
+        ]);
+        if ($validator->fails()) {
+            return $this->send_response(400, 'فشل العملية ', $validator->errors(), []);
+        }
+        $user = User::find($request["id"]);
+
+        $data = [];
+        $data["user_type"] = 2;
+        $user->update($data);
+        return $this->send_response(200, 'تم الغاء ترقية المستخدم بنجاح', [], User::find($user->id), null);
+    }
+    public function logout(Request $request)
+    {
+        auth()->user()->token()->revoke();
+        return $this->send_response(200, 'تم تسجيل الخروج بنجاح', [], [], );
+    }
+
+    public function sendCodeForgotPassword(Request $request)
+    {
+
+        $request = $request->json()->all();
+        $validator = Validator::make(
+            $request,
+            [
+            "email" => "required|string|exists:users,email",
+        ],
+            [
+            'email.required' => 'حقل البريد الالكتروني مطلوب',
+            'email.exists' => ' البريد الالكتروني الذي قمت بأدخاله غير موجود',
+        ]
+        );
+        if ($validator->fails()) {
+            return $this->send_response(400, 'فشل العملية ', $validator->errors(), []);
+        }
+        $user = User::where("email", $request["email"])->first();
+        $data = [];
+        $random_code = $this->random_code();
+        $data = [
+            'random_code' => $random_code,
+        ];
+        $user->update($data);
+        $mail_data = [
+            "title" => "مرحبا " . $request["email"],
+            "body" => " رمز التحقق الخاص بك :" . $random_code,
+        ];
+        $subject = 'اعادة تعين كلمة المرور';
+        Mail::to($request["email"])->send(new EducationalMail($mail_data, $subject));
+        return $this->send_response(200, 'تم ارسال رمز التحقق', [], null, null);
+    }
+
+    public function checkCodeForgotPassword(Request $request)
+    {
+
+        $request = $request->json()->all();
+        $validator = Validator::make(
+            $request,
+            [
+                'random_code' => 'required',
+            "email" => "required|string|exists:users,email",
+            "email" => "required|string|exists:users,email",
+        ],
+            [
+            'random_code.required' => 'لم تدخل رمز التحقق',
+            'email.required' => 'حقل البريد الالكتروني مطلوب',
+            'email.exists' => ' البريد الالكتروني الذي قمت بأدخاله غير موجود',
+        ]
+        );
+        if ($validator->fails()) {
+            return $this->send_response(400, 'فشل العملية ', $validator->errors(), []);
+        }
+        $user = User::where("email", $request["email"])->first();
+        if ($request["random_code"] == $user->random_code) {
+
+            return $this->send_response(200, 'قم بتغير كلمة المرور', null, $user->id);
+        } else {
+            return $this->send_response(400, 'ادخلت رمز تحقق غير صحيح', [], null);
+        }
+    }
+
+
+    public function resetPassword(Request $request)
+    {
+
+        $request = $request->json()->all();
+        $validator = Validator::make(
+            $request,
+            [
+              'id' => 'required|exists:users,id',
+                "password" => "required|string|max:255|min:8",
+        ],
+            [
+            'id.required' => 'معرف المستخدم مطلوب',
+            'id.exists' => 'معرف المستخدم غير متوفر',
+            'password.required' => 'حقل كلمة المرور الجديده مطلوبه',
+            'password.max' => 'لقد تجاوزت الحد الاعلى لعدد احرف كلمة المرور',
+            'password.min' => 'الحد الادنى لعدد احرف كلمة المرور 8',
+        ]
+        );
+        if ($validator->fails()) {
+            return $this->send_response(400, 'فشل العملية ', $validator->errors(), []);
+        }
+        $user = User::find($request["id"]);
+        $user->update([
+            'password' => bcrypt($request['password'])
+        ]);
+
+        return $this->send_response(200, 'تم تغير كلمة المرور بنجاح', [], []);
+    }
+
 }

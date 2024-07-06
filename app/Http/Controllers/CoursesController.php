@@ -9,11 +9,13 @@ use App\Traits\UploadImage;
 use App\Traits\SendResponse;
 use App\Traits\Filter;
 use App\Traits\OrderBy;
+use App\Traits\Search;
+use File;
 use Illuminate\Support\Facades\Validator;
 
 class CoursesController extends Controller
 {
-    use SendResponse, Pagination, Filter, OrderBy, UploadImage;
+    use SendResponse, Pagination, Filter, OrderBy, UploadImage, Search;
 
     public function getCourses()
     {
@@ -40,13 +42,16 @@ class CoursesController extends Controller
         return $this->send_response(200, 'تم الحصول على الكورسات بنجاح', [], $res["model"], null, $res["count"]);
     }
 
-    public function addCourses(CoursesRequest $request)
+    public function addCourses(Request $request)
     {
         $request = $request->json()->all();
         $validator = Validator::make($request, [
-            'title' => 'required',
+            'title' => 'required|unique:courses,title',
+            'image' => 'required',
         ], [
             'title.required' => 'يرجى ادخال اسم الكورس',
+            'title.unique' => 'اسم الكورس مستخدم',
+            'image.required' => 'يرجى اضافة صورة الكورس',
         ]);
         if ($validator->fails()) {
             return $this->send_response(400, "حصل خطأ في المدخلات", $validator->errors(), []);
@@ -58,21 +63,37 @@ class CoursesController extends Controller
 
         return $this->send_response("200", 'تم عملية اضافة الكورس بنجاح', [], Courses::find($courses->id));
     }
-    public function editCourses(CoursesRequest $request)
+    public function editCourses(Request $request)
     {
         $request = $request->json()->all();
+        $validator = Validator::make($request, [
+            'title' => 'required|unique:courses,title,'. $request['id'],
+        ], [
+            'title.required' => 'يرجى ادخال اسم الكورس',
+            'title.unique' => 'اسم الكورس مستخدم',
+        ]);
+        if ($validator->fails()) {
+            return $this->send_response(400, "حصل خطأ في المدخلات", $validator->errors(), []);
+        }
+        $data = [];
         $courses = Courses::find($request['id']);
         if (array_key_exists('image', $request)) {
-            $request['image'] = $this->uploadPicture($request['image'], '/images/courses/');
+            $data['image'] = $this->uploadPicture($request['image'], '/images/courses/');
         }
-        $courses->update($request);
+        $data['title'] = $request['title'];
+
+        $courses->update($data);
         return $this->send_response(200, 'تم تعديل الكورس بنجاح', [], Courses::find($courses->id));
     }
 
-    public function deleteCourses(CoursesRequest $request)
+    public function deleteCourses(Request $request)
     {
-        Courses::find($request["id"])->delete();
+        $courses = Courses::find($request["id"]);
+        if (File::exists(public_path(), $courses->image)) {
+            $image_path = public_path() . $courses->image;
+            unlink($image_path);
+        }
+        $courses->delete();
         return $this->send_response(200, 'تم حذف الكورس بنجاح', [], []);
     }
-
 }
