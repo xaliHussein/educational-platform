@@ -164,8 +164,6 @@ class EnrollmentsController extends Controller
 
         $courses = Enrollments::create($data);
 
-
-
         $zaincash = new ZainCash();
         $amount = $course->price;
         $service_type = "Course";
