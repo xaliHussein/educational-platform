@@ -16,11 +16,11 @@ return new class extends Migration
             $table->uuid("category_id");
             $table->uuid("user_id");
             $table->string('title');
-            $table->text('content')->nallable();
+            $table->text('content')->nullable();
             $table->integer("upload_type"); // 0 youtub - 1 platform
-            $table->string("video_url")->nallable();
-            $table->string('video')->nallable();
-            $table->string('image')->nallable();
+            $table->string("video_url")->nullable();
+            $table->string('video')->nullable();
+            $table->string('image')->nullable();
 
             $table->timestamps();
         });
