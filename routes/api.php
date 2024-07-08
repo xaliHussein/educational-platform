@@ -28,6 +28,7 @@ use App\Http\Controllers\PurchaseCodeController;
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+// Route::get('pamentCheck', [EnrollmentsController::class, "pamentCheck"])->name('redirect');
 
 route::post("login", [UsersController::class, "login"]);
 route::post("register", [UsersController::class, "register"]);
@@ -106,9 +107,9 @@ Route::middleware(['auth:api'])->group(function () {
     });
     Route::controller(EnrollmentsController::class)->group(function () {
         Route::post('check_enrollments_lessons', 'checkEnrollmentsLessons');
-        Route::post('buy_course', 'buyCourse');
         Route::post('buy_course_code', 'buyCourseCode');
-        // Route::get('pament_check', 'pamentCheck')->name('redirect');
+        Route::post('payment', 'makePayment');
+        Route::get('pamentCheck', 'pamentCheck')->name('redirect')->withoutMiddleware('auth:api');
     });
     Route::controller(StatisticsController::class)->group(function () {
         Route::get('get_statistics', 'getStatistics');

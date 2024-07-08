@@ -100,6 +100,13 @@ class CourseCategoryController extends Controller
             $messages['price.required'] = 'يرجى ادخال سعر فئة الكورس';
             $data['price'] = $request['price'];
         }
+        if (isset($request['offer'])) {
+
+            $rules['offer_expired'] = 'required';
+            $messages['offer_expired.required'] = 'يرجى ادخال  تاريخ انتهاء';
+            $data['offer_expired'] = $request['offer_expired'];
+            $data['offer'] = $request['offer'];
+        }
 
         $rules = [
             'title' => 'required',
@@ -147,6 +154,12 @@ class CourseCategoryController extends Controller
             $rules['price'] = 'required|numeric';
             $messages['price.required'] = 'يرجى ادخال سعر فئة الكورس';
             $data['price'] = $request['price'];
+        }
+        if (isset($request['offer'])) {
+            $rules['offer_expired'] = 'required';
+            $messages['offer_expired.required'] = 'يرجى ادخال  تاريخ انتهاء';
+            $data['offer_expired'] = $request['offer_expired'];
+            $data['offer'] = $request['offer'];
         }
 
         $rules = [

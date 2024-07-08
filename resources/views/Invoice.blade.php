@@ -53,6 +53,10 @@
         }
     </style>
 </head>
+@php
+    use Carbon\Carbon;
+    $currentDate = Carbon::now();
+@endphp
 
 <body>
     <div class="container-fluid">
@@ -68,6 +72,7 @@
                             <th scope="col">الكورس</th>
                             <th scope="col">نوع الدفع</th>
                             <th scope="col">مبلغ الدفع </th>
+                            <th scope="col">قيمة الخصم</th>
                             <th scope="col">التاريخ</th>
 
                         </tr>
@@ -75,25 +80,45 @@
                     <tbody>
 
 
-                            <tr>
-                                <th scope=""><h3>{{ $enrollment->user->name }}</h3></th>
-                                <td><h3>#{{ $enrollment->order_id }}</h3></td>
-                                <td><h3>{{ $enrollment->category->title }}</h3></td>
+                        <tr>
+                            <th scope="">
+                                <h3>{{ $enrollment->user->name }}</h3>
+                            </th>
+                            <td>
+                                <h3>#{{ $enrollment->order_id }}</h3>
+                            </td>
+                            <td>
+                                <h3>{{ $enrollment->category->title }}</h3>
+                            </td>
 
-                                <td  >
-                                    <h3 @if ($enrollment->status == 0)>نقد</h3>
+                            <td>
+                                <h3
+                                    @if ($enrollment->status == 0) >نقد</h3>
                                     <h3 @elseif ($enrollment->status == 1)> زين كاش</h3 @endif>
-                                </td>
-                                <td><h3>د.ع{{ $enrollment->price }}</h3></td>
-                                <td><h3>{{ $enrollment->subscription_time }}</h3></td>
-                            </tr>
+                            </td>
+                            <td>
+                                <h3>د.ع{{ $enrollment->price }}</h3>
+                            </td>
+
+                            <td>
+                                <h3 style="color:green"
+                                    @if ($enrollment->offer != null) >{{ $enrollment->offer }}%</h3>
+                                <h3 style="color:red" @else>
+                                       لايوجد
+                                </h3 @endif>
+                            </td>
+
+                            <td>
+                                <h3>{{ $enrollment->subscription_time }}</h3>
+                            </td>
+                        </tr>
 
 
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-</div>
 </body>
 
 </html>

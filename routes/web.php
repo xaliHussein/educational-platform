@@ -19,7 +19,10 @@ Route::get('/', function () {
     return view('welcome');
 });
 // route::get("test", [EnrollmentsController::class, "test"]);
-route::get("/pament_check", [EnrollmentsController::class, "pamentCheck"])->name('redirect');
+// route::get("/pament_check", [EnrollmentsController::class, "pamentCheck"])->name('redirect');
 
 Route::get('/test', [App\Http\Controllers\EnrollmentsController::class, 'test']);
+
+Route::get('/initiatePayment', [App\Http\Controllers\EnrollmentsController::class, 'initiatePayment']);
+Route::get('/handleCallback', [App\Http\Controllers\EnrollmentsController::class, 'handleCallback']);
 

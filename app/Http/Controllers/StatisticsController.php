@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Lessons;
@@ -19,10 +18,11 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 
-
 class StatisticsController extends Controller
 {
-    use SendResponse, UploadImage, Pagination;
+    use SendResponse;
+    use UploadImage;
+    use Pagination;
 
     public function getStatistics()
     {
@@ -31,7 +31,7 @@ class StatisticsController extends Controller
         $lastDayOfLastMonth = Carbon::now()->endOfYear();
         $lastMonthWithLastDay = $lastDayOfLastMonth->format('Y-m-d');
 
-        $enrollments_six_months = Enrollments::select([
+        $enrollments_six_months = Enrollments::where("status", 1)->select([
             DB::raw('DATE(created_at) AS date'),
             DB::raw('COUNT(*) AS count')
         ])->whereBetween('created_at', [$firstDayOfFirstMonth, $lastMonthWithLastDay])
@@ -41,18 +41,20 @@ class StatisticsController extends Controller
             ->toArray();
         $salesChartByMonth = [];
         $lastSixMonths = CarbonPeriod::create($firstMonthWithFirstDay, '1 month', $lastMonthWithLastDay);
+
+        foreach ($lastSixMonths as $date) {
+            $dateString = $date->format('F');
+            $salesChartByMonth[$dateString] = 0;
+
+        }
+
         foreach ($enrollments_six_months as $data) {
-            foreach ($lastSixMonths as $date) {
-                $dateString = $date->format('F');
-                if (!isset($salesChartByMonth[$dateString])) {
-                    $salesChartByMonth[$dateString] = 0;
-                }
-            }
+            $date = date('F', strtotime($data['date']));
             if (isset($salesChartByMonth[$dateString])) {
-                 $date = date('F', strtotime($data['date']));
-                $salesChartByMonth[$date] = $data['count'];
+                $salesChartByMonth[$date] += $data['count'];
             }
         }
+
         $data = [];
         $chart = [];
         foreach ($salesChartByMonth as $key => $val) {
@@ -65,9 +67,9 @@ class StatisticsController extends Controller
         $teachers = User::where("user_type", 1)->orWhere("user_type", 0)->where('account_status', 1)->count();
         $lessons = Lessons::select("*")->count();
         $course_category = Course_Category::select("*")->count();
-        $enrollments = Enrollments::select("*")->count();
-        $enrollments_cash = Enrollments::where("payment_type",0)->count();
-        $enrollments_zine_cash = Enrollments::where("payment_type",1)->count();
+        $enrollments = Enrollments::where("status", 1)->count();
+        $enrollments_cash = Enrollments::where("payment_type", 0)->where("status", 1)->count();
+        $enrollments_zine_cash = Enrollments::where("payment_type", 1)->where("status", 1)->count();
         $enrollments_type = [$enrollments_cash,$enrollments_zine_cash];
         $result = [];
         $result = [
