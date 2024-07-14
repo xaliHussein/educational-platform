@@ -254,14 +254,13 @@ class EnrollmentsController extends Controller
                 ];
                 Cache::forget('id');
                 Cache::forget('category_id');
-                //https://efredgvrergv34345435.online/enrollment
-                return redirect()->away('http://localhost:8080/enrollment?data=' . json_encode($data_vue));
+                return redirect()->away('https://efredgvrergv34345435.online/enrollment?data=' . json_encode($data_vue));
 
             } elseif($result->status == 'failed') {
                 $data = [
                     'status' => $result->status,
                 ];
-                return redirect()->away('http://localhost:8080/enrollment?data=' . json_encode($data));
+                return redirect()->away('https://efredgvrergv34345435.online/enrollment?data=' . json_encode($data));
             }
         }
 
