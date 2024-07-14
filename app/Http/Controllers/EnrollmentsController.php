@@ -16,7 +16,7 @@ use App\Models\Course_Category;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Hawkiq\LaravelZaincash\Services\ZainCash;
-
+use Illuminate\Support\Facades\Cache;
 
 class EnrollmentsController extends Controller
 {
@@ -24,6 +24,7 @@ class EnrollmentsController extends Controller
     use UploadImage;
     use Pagination;
     use Search;
+    public $category_id;
 
     public function random_code()
     {
@@ -36,12 +37,13 @@ class EnrollmentsController extends Controller
         }
     }
 
+
     public function getEnrollments()
     {
         if(auth()->user()->user_type == 1) {
-            $enrollments = Enrollments::where("teacher_id", auth()->user()->id)->where('status',1);
+            $enrollments = Enrollments::where("teacher_id", auth()->user()->id)->where('status', 1);
         } else {
-            $enrollments = Enrollments::select("*")->where('status',1);
+            $enrollments = Enrollments::select("*")->where('status', 1);
         }
 
         if (isset($_GET["query"])) {
@@ -77,7 +79,7 @@ class EnrollmentsController extends Controller
         $course_categories = Course_Category::find($request['category_id']);
         if ($course_categories->course_type == 1) {
             $lessons_enrollments = Enrollments::where("category_id", $request['category_id'])
-                ->where("user_id", auth()->user()->id)->where('status',1)->get();
+                ->where("user_id", auth()->user()->id)->where('status', 1)->get();
             return $this->send_response(200, 'تمت عملية التحقق بنجاح', [], $lessons_enrollments);
         } else {
             $course_categories_free = "free";
@@ -101,6 +103,15 @@ class EnrollmentsController extends Controller
         if ($validator->fails()) {
             return $this->send_response(400, "حصل خطأ في المدخلات", $validator->errors(), []);
         }
+        // التاكد من ان المشترك لم يشترك بالكورس سابقا
+        $enrollmentExists = Enrollments::where('user_id', auth()->user()->id)
+        ->where('category_id', $request['category_id'])
+        ->exists();
+
+        if ($enrollmentExists) {
+            return $this->send_response(400, "انته مشترك بهذا الكورس بالفعل", [], []);
+        }
+
         $purchase_codes = PurchaseCode::where('code', $request['code'])->first();
         $course = Course_Category::find($request['category_id']);
 
@@ -125,7 +136,7 @@ class EnrollmentsController extends Controller
         if($course->offer != null &&  Carbon::now()->format('Y-m-d') <=  $course->offer_expired) {
             $data['offer'] = $course->offer;
             $data['price'] = ($course->price - ($course->price / 100) * $course->offer) ;
-        }else{
+        } else {
             $data['price'] = $course->price;
         }
 
@@ -158,40 +169,30 @@ class EnrollmentsController extends Controller
         if ($validator->fails()) {
             return $this->send_response(400, "حصل خطأ في المدخلات", $validator->errors(), []);
         }
-        $course = Course_Category::find($request['category_id']);
-        $order_id = $this->random_code();
 
+        // التاكد من ان المشترك لم يشترك بالكورس سابقا
+        $enrollmentExists = Enrollments::where('user_id', auth()->user()->id)
+        ->where('category_id', $request['category_id'])
+        ->exists();
 
-        $data = [];
-
-        $data['payment_type'] = 1;
-        $data['order_id'] = $order_id;
-        $data['category_id'] = $request['category_id'];
-        $data['user_id'] = auth()->user()->id;
-        $data['teacher_id'] = $course->user_id;
-        $data['status'] = 0;
-        $data['subscription_time'] = Carbon::now()->format('Y-m-d');
-        if($course->offer != null &&  Carbon::now()->format('Y-m-d') <=  $course->offer_expired) {
-            $data['offer'] = $course->offer;
-            $data['price'] = ($course->price - ($course->price / 100) * $course->offer) ;
-        }else{
-            $data['price'] = $course->price;
+        if ($enrollmentExists) {
+            return $this->send_response(400, "انته مشترك بهذا الكورس بالفعل", [], []);
         }
 
-        $enrollment = Enrollments::create($data);
+        $course = Course_Category::find($request['category_id']);
+        $order_id = $this->random_code();
+        Cache::put('category_id', $course->id);
+        Cache::put('id', auth()->user()->id);
 
-        $enrollment = Enrollments::where('id', $enrollment->id)->first();
-        $pdf = PDF::loadView('Invoice', compact('enrollment'));
-        $fileName = 'invoice_' . $order_id . '.pdf';
-        $filePath = public_path('/Invoice_pdf/' . $fileName);
-        $pdf->save($filePath);
-
-        $enrollment->update([
-            'invoice' => '/Invoice_pdf/' . $fileName
-        ]);
+        // التاكد من وجود خصم على سعر الكورس
+        if($course->offer != null &&  Carbon::now()->format('Y-m-d') <=  $course->offer_expired) {
+            $price = ($course->price - ($course->price / 100) * $course->offer) ;
+        } else {
+            $price = $course->price;
+        }
 
         $zaincash = new ZainCash();
-        $amount = $enrollment->price;
+        $amount = $price;
         $service_type = "Course";
         $order_id = $order_id;
 
@@ -205,7 +206,6 @@ class EnrollmentsController extends Controller
 
     public function pamentCheck()
     {
-
         $token = request()->input('token');
         if (isset($token)) {
             $zaincash = new ZainCash();
@@ -218,16 +218,43 @@ class EnrollmentsController extends Controller
                 if (strpos($orderid, $prefix) === 0) {
                     $orderid = substr($orderid, strlen($prefix));
                 }
-                $enrollments = Enrollments::where('order_id', $orderid)->first();
+
+                $category_id = Cache::get('category_id');
+                $course = Course_Category::find($category_id);
+                $data = [];
+
+                $data['payment_type'] = 1;
+                $data['order_id'] = $orderid;
+                $data['category_id'] = $category_id;
+                $data['user_id'] = Cache::get('id');
+                $data['teacher_id'] = $course->user_id;
+                $data['status'] = 1;
+                $data['subscription_time'] = Carbon::now()->format('Y-m-d');
+                if($course->offer != null &&  Carbon::now()->format('Y-m-d') <=  $course->offer_expired) {
+                    $data['offer'] = $course->offer;
+                    $data['price'] = ($course->price - ($course->price / 100) * $course->offer) ;
+                } else {
+                    $data['price'] = $course->price;
+                }
+
+                $enrollment = Enrollments::create($data);
+
+                $pdf = PDF::loadView('Invoice', compact('enrollment'));
+                $fileName = 'invoice_' . $orderid . '.pdf';
+                $filePath = public_path('/Invoice_pdf/' . $fileName);
+                $pdf->save($filePath);
+
+                $enrollment->update([
+                    'invoice' => '/Invoice_pdf/' . $fileName
+                ]);
+
                 $data_vue = [
                     'status' => $result->status,
-                    'url_invoice' => $enrollments->invoice,
+                    'url_invoice' => $enrollment->invoice,
                 ];
-
-                $data = [
-                    'status' => 1,
-                ];
-                $enrollments->update($data);
+                Cache::forget('id');
+                Cache::forget('category_id');
+                //https://efredgvrergv34345435.online/enrollment
                 return redirect()->away('http://localhost:8080/enrollment?data=' . json_encode($data_vue));
 
             } elseif($result->status == 'failed') {

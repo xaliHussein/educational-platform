@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use App\Models\User;
+use App\Models\Courses;
 use App\Models\Lessons;
 use Carbon\CarbonPeriod;
 use App\Traits\Pagination;
 use App\Models\Enrollments;
 use App\Traits\UploadImage;
+use App\Models\PurchaseCode;
 use App\Traits\SendResponse;
 use Illuminate\Http\Request;
 use App\Mail\EducationalMail;
@@ -66,7 +68,9 @@ class StatisticsController extends Controller
         $users = User::where("user_type", 2)->where('account_status', 1)->count();
         $teachers = User::where("user_type", 1)->orWhere("user_type", 0)->where('account_status', 1)->count();
         $lessons = Lessons::select("*")->count();
+        $course = Courses::select("*")->count();
         $course_category = Course_Category::select("*")->count();
+        $purchase_code = PurchaseCode::select("*")->count();
         $enrollments = Enrollments::where("status", 1)->count();
         $enrollments_cash = Enrollments::where("payment_type", 0)->where("status", 1)->count();
         $enrollments_zine_cash = Enrollments::where("payment_type", 1)->where("status", 1)->count();
@@ -76,6 +80,8 @@ class StatisticsController extends Controller
             'users' => $users,
             'teachers' => $teachers,
             'lessons' => $lessons,
+            'course' => $course,
+            'purchase_code' => $purchase_code,
             'course_category' => $course_category,
             'enrollments' => $enrollments,
             'enrollments_type' => $enrollments_type,

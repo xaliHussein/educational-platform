@@ -97,7 +97,7 @@ class UsersController extends Controller
             'user_type' => 2,
         ];
         if (array_key_exists('image', $request)) {
-            $data['image'] = $this->uploadPicture($request['image'], '/images/user/');
+            $data['image'] = $this->uploadPicture($request['image'], '/images/users/');
         }
         $user = User::create($data);
         $mail_data = [
@@ -254,7 +254,7 @@ class UsersController extends Controller
         }
         $user = User::find($request['id']);
         $user->update([
-            'image' => $this->uploadPicture($request['image'], '/images/user')
+            'image' => $this->uploadPicture($request['image'], '/images/users/')
         ]);
         return $this->send_response(200, 'تم تغير الصورة بنجاح', [], User::find($user->id));
     }

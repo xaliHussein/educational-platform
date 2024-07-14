@@ -93,8 +93,8 @@
 
                             <td>
                                 <h3
-                                    @if ($enrollment->status == 0) >نقد</h3>
-                                    <h3 @elseif ($enrollment->status == 1)> زين كاش</h3 @endif>
+                                    @if ($enrollment->payment_type == 0) >كود شراء</h3>
+                                    <h3 @elseif ($enrollment->payment_type == 1)> زين كاش</h3 @endif>
                             </td>
                             <td>
                                 <h3>د.ع{{ $enrollment->price }}</h3>
