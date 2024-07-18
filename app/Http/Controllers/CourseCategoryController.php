@@ -200,6 +200,7 @@ class CourseCategoryController extends Controller
         $data['time_course'] = $request['time_course'];
         $data['course_type'] = $request['course_type'];
         $data['time_type'] = $request['time_type'];
+        $data['description'] = $request['description'];
         $data['course_id'] = $request['course_id'];
 
         $course_category->update($data);
