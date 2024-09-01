@@ -54,7 +54,7 @@ class UsersController extends Controller
             $rules['login_code'] = 'required';
             $messages['login_code.required'] = 'رمز تسجيل الدخول مطلوب';
 
-        } elseif(isset($request['email'])) {
+        } elseif (isset($request['email'])) {
             $rules['email'] = 'required';
             $rules['password'] = 'required|string|max:255|min:8';
 
@@ -71,11 +71,11 @@ class UsersController extends Controller
         }
 
 
-        if(isset($request['email'])) {
+        if (isset($request['email'])) {
 
             $user = User::where("email", $request["email"])->first();
 
-            if($user->mac_address != $request['mac_address']) {
+            if ($user->mac_address != $request['mac_address']) {
                 return $this->send_response(400, 'لايمكن تسجيل الدخول لهذا الجهاز', [], null, null);
             }
 
@@ -84,7 +84,7 @@ class UsersController extends Controller
                 if ($user->account_status == 1) {
                     $token = $user->createToken('educational_platform')->accessToken;
                     return $this->send_response(200, 'تم تسجيل الدخول بنجاح', [], $user, $token);
-                } elseif($user->account_status == 2) {
+                } elseif ($user->account_status == 2) {
                     return $this->send_response(400, 'تم حظر حسابك يرجى التواصل مع المالك', [], null, null);
                 } else {
                     $data = [];
@@ -105,14 +105,22 @@ class UsersController extends Controller
             } else {
                 return $this->send_response(400, "ادخلت اسم مستخدم او كلمة مرور غير صحيحة", [], null, null);
             }
-        } elseif(isset($request['login_code'])) {
+        } elseif (isset($request['login_code'])) {
             $user = User::where("login_code", $request["login_code"])->first();
 
             if (!$user) {
                 return $this->send_response(400, "رمز تسجيل الدخول غير صحيح", [], null, null);
             }
 
-            if($user->mac_address != $request['mac_address']) {
+            if (!isset($user->mac_address)) {
+                $data = [];
+                $data = [
+                    'mac_address' => $request['mac_address'],
+                ];
+                $user->update($data);
+            }
+
+            if ($user->mac_address != $request['mac_address']) {
                 return $this->send_response(400, 'لايمكن تسجيل الدخول لهذا الجهاز', [], null, null);
             }
 
@@ -130,7 +138,7 @@ class UsersController extends Controller
             'login_code' => $this->create_login_code(),
             'random_code' => $this->random_code(),
             'user_type' => 2,
-            'account_status' =>1,
+            'account_status' => 1,
         ];
         $user = User::create($data);
 
