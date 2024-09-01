@@ -2,14 +2,15 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\NewsController;
 use App\Http\Controllers\UsersController;
 use App\Http\Controllers\BannersController;
 use App\Http\Controllers\CoursesController;
 use App\Http\Controllers\LessonsController;
 use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\EnrollmentsController;
-use App\Http\Controllers\CourseCategoryController;
 use App\Http\Controllers\PurchaseCodeController;
+use App\Http\Controllers\CourseCategoryController;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,8 +53,16 @@ Route::middleware(['auth:api'])->group(function () {
             Route::delete('delete_courses', 'deleteCourses');
         });
 
+        Route::controller(NewsController::class)->group(function () {
+            Route::get('get_news', 'getNews');
+            Route::post('add_news', 'addNews');
+            Route::delete('delete_news', 'deleteNews');
+        });
+
         Route::controller(UsersController::class)->group(function () {
             Route::get('get_users', 'getUsers');
+
+            Route::post('add_users', 'addUsers');
             Route::put('block_user', 'blockUser');
             Route::put('open_user', 'openUser');
             Route::put('user_upgrade', 'userUpgrade');

@@ -26,47 +26,115 @@ class UsersController extends Controller
         $code = substr(str_shuffle("0123456789"), 0, 6);
         return $code;
     }
+    public function create_login_code()
+    {
+        $code = substr(str_shuffle("0123456789ABCDEFGHIJKPQWRZX"), 6, 7);
+        $get = User::where('login_code', $code)->first();
+        if ($get) {
+            return $this->create_login_code();
+        } else {
+            return $code;
+        }
+    }
+
 
     public function login(Request $request)
     {
         $request = $request->json()->all();
-        $validator = Validator::make($request, [
-            'email' => 'required',
-            'password' => 'required'
-        ], [
-            'email.required' => 'يرجى ادخال البريد الالكتروني ',
-            'password.required' => 'يرجى ادخال كلمة المرور ',
-        ]);
+
+        $rules = [
+            'mac_address' => 'required|string',
+        ];
+        $messages = [
+            'mac_address.required' => 'معرف الجهاز مطلوب',
+        ];
+
+        if (isset($request['login_code'])) {
+
+            $rules['login_code'] = 'required';
+            $messages['login_code.required'] = 'رمز تسجيل الدخول مطلوب';
+
+        } elseif(isset($request['email'])) {
+            $rules['email'] = 'required';
+            $rules['password'] = 'required|string|max:255|min:8';
+
+            $messages['email.required'] = 'يرجى ادخال البريد الالكتروني ';
+            $messages['password.required'] = 'يرجى ادخال كلمة المرور ';
+        } else {
+            return $this->send_response(400, "لم تقم بادخال رمز تسجيل الدخول او البريد الالكتروني", [], null, null);
+        }
+
+        $validator = Validator::make($request, $rules, $messages);
+
         if ($validator->fails()) {
             return $this->send_response(400, "حصل خطأ في المدخلات", $validator->errors(), []);
         }
 
-        if (auth()->attempt(array('email' => $request['email'], 'password' => $request['password']))) {
-            $user = auth()->user();
-            if ($user->account_status == 1) {
-                $token = $user->createToken('educational_platform')->accessToken;
-                return $this->send_response(200, 'تم تسجيل الدخول بنجاح', [], $user, $token);
-            } elseif($user->account_status == 2) {
-                return $this->send_response(400, 'تم حظر حسابك يرجى التواصل مع المالك', [], null, null);
-            } else {
-                $data = [];
-                $random_code = $this->random_code();
-                $data = [
-                    'random_code' => $random_code,
-                ];
-                $user->update($data);
-                $mail_data = [
-                    "title" => "مرحبا " . $user->email,
-                    "body" => " رمز التحقق الخاص بك :" . $random_code,
-                ];
-                $subject = 'التحقق من البريد الالكتروني';
-                Mail::to($user->email)->send(new EducationalMail($mail_data, $subject));
 
-                return $this->send_response(200, 'يرجى تاكيد عنوان بريدك الالكتروني', [], $user, null);
+        if(isset($request['email'])) {
+
+            $user = User::where("email", $request["email"])->first();
+
+            if($user->mac_address != $request['mac_address']) {
+                return $this->send_response(400, 'لايمكن تسجيل الدخول لهذا الجهاز', [], null, null);
             }
-        } else {
-            return $this->send_response(400, "ادخلت اسم مستخدم او كلمة مرور غير صحيحة", [], null, null);
+
+            if (auth()->attempt(array('email' => $request['email'], 'password' => $request['password']))) {
+                $user = auth()->user();
+                if ($user->account_status == 1) {
+                    $token = $user->createToken('educational_platform')->accessToken;
+                    return $this->send_response(200, 'تم تسجيل الدخول بنجاح', [], $user, $token);
+                } elseif($user->account_status == 2) {
+                    return $this->send_response(400, 'تم حظر حسابك يرجى التواصل مع المالك', [], null, null);
+                } else {
+                    $data = [];
+                    $random_code = $this->random_code();
+                    $data = [
+                        'random_code' => $random_code,
+                    ];
+                    $user->update($data);
+                    $mail_data = [
+                        "title" => "مرحبا " . $user->email,
+                        "body" => " رمز التحقق الخاص بك :" . $random_code,
+                    ];
+                    $subject = 'التحقق من البريد الالكتروني';
+                    Mail::to($user->email)->send(new EducationalMail($mail_data, $subject));
+
+                    return $this->send_response(200, 'يرجى تاكيد عنوان بريدك الالكتروني', [], $user, null);
+                }
+            } else {
+                return $this->send_response(400, "ادخلت اسم مستخدم او كلمة مرور غير صحيحة", [], null, null);
+            }
+        } elseif(isset($request['login_code'])) {
+            $user = User::where("login_code", $request["login_code"])->first();
+
+            if (!$user) {
+                return $this->send_response(400, "رمز تسجيل الدخول غير صحيح", [], null, null);
+            }
+
+            if($user->mac_address != $request['mac_address']) {
+                return $this->send_response(400, 'لايمكن تسجيل الدخول لهذا الجهاز', [], null, null);
+            }
+
+            $token = $user->createToken('educational_platform')->accessToken;
+            return $this->send_response(200, 'تم تسجيل الدخول بنجاح', [], $user, $token);
         }
+
+    }
+
+    public function addUsers()
+    {
+        $data = [];
+        $random_code = $this->random_code();
+        $data = [
+            'login_code' => $this->create_login_code(),
+            'random_code' => $this->random_code(),
+            'user_type' => 2,
+            'account_status' =>1,
+        ];
+        $user = User::create($data);
+
+        return $this->send_response(200, 'تم انشاء حساب جديد', [], User::find($user->id));
     }
 
     public function register(Request $request)

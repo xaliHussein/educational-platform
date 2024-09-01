@@ -29,7 +29,7 @@ class BannersController extends Controller
         if (!isset($_GET['limit']))
             $_GET['limit'] = 10;
         $res = $this->paging($faqs->orderBy("created_at", "DESC"),  $_GET['skip'],  $_GET['limit']);
-        return $this->send_response(200, 'تم جلب المنتجات في المخزن بنجاح', [], $res["model"], null, $res["count"]);
+        return $this->send_response(200, 'تم احضار جميع الاعلانات', [], $res["model"], null, $res["count"]);
     }
 
     public function addBanners(Request $request)
