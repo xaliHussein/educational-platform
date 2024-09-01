@@ -42,17 +42,12 @@ class UsersController extends Controller
     {
         $request = $request->json()->all();
 
-        $rules = [
-            'mac_address' => 'required|string',
-        ];
-        $messages = [
-            'mac_address.required' => 'معرف الجهاز مطلوب',
-        ];
-
         if (isset($request['login_code'])) {
 
             $rules['login_code'] = 'required';
+            $rules['mac_address'] = 'required|string';
             $messages['login_code.required'] = 'رمز تسجيل الدخول مطلوب';
+            $messages['mac_address.required'] = 'معرف الجهاز مطلوب';
 
         } elseif (isset($request['email'])) {
             $rules['email'] = 'required';
