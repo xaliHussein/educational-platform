@@ -70,9 +70,9 @@ class UsersController extends Controller
 
             $user = User::where("email", $request["email"])->first();
 
-            if ($user->mac_address != $request['mac_address']) {
-                return $this->send_response(400, 'لايمكن تسجيل الدخول لهذا الجهاز', [], null, null);
-            }
+            // if ($user->mac_address != $request['mac_address']) {
+            //     return $this->send_response(400, 'لايمكن تسجيل الدخول لهذا الجهاز', [], null, null);
+            // }
 
             if (auth()->attempt(array('email' => $request['email'], 'password' => $request['password']))) {
                 $user = auth()->user();

@@ -19,4 +19,9 @@ class News extends Model
     {
         return $this->morphMany(Images::class,'imageable');
     }
+
+    public function comments()
+    {
+        return $this->hasMany(Comments::class);
+    }
 }

@@ -11,6 +11,7 @@ use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\EnrollmentsController;
 use App\Http\Controllers\PurchaseCodeController;
 use App\Http\Controllers\CourseCategoryController;
+use App\Http\Controllers\CommentsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -54,7 +55,6 @@ Route::middleware(['auth:api'])->group(function () {
         });
 
         Route::controller(NewsController::class)->group(function () {
-            Route::get('get_news', 'getNews');
             Route::post('add_news', 'addNews');
             Route::delete('delete_news', 'deleteNews');
         });
@@ -123,6 +123,10 @@ Route::middleware(['auth:api'])->group(function () {
     Route::controller(StatisticsController::class)->group(function () {
         Route::get('get_statistics', 'getStatistics');
     });
+
+    Route::controller(NewsController::class)->group(function () {
+        Route::get('get_news', 'getNews');
+    });
     Route::controller(UsersController::class)->group(function () {
         Route::get('get_user', 'getUser');
         Route::put('update_image_user', 'updateImageUser');
@@ -132,5 +136,14 @@ Route::middleware(['auth:api'])->group(function () {
         Route::put('email_verification_update', 'emailVerificationUpdate');
         Route::put('send_code_again_update', 'sendCodeAgainUpdate');
         Route::post('logout', 'logout');
+    });
+
+
+    Route::controller(CommentsController::class)->group(function () {
+        Route::get('get_user_comments', 'getUserComments');
+        Route::post('add_comment', 'addComment');
+        Route::post('reply_comment', 'replyComment');
+        Route::delete('delete_comment', 'deleteComment');
+
     });
 });

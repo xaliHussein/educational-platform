@@ -70,16 +70,7 @@ class NewsController extends Controller
         $data['user_id'] = auth()->user()->id;
 
         if (isset($request['file'])) {
-            $pdfFile = $request['file'];
-            $fileName = 'file_' . $this->random_code() . '.pdf';
-            $directory = 'files/';
-            $filePath = public_path($directory . $fileName);
-
-            if (!File::exists(public_path($directory))) {
-                File::makeDirectory(public_path($directory), 0755, true);
-            }
-            $pdfFile->move(public_path($directory), $fileName);
-            $data['file'] = $directory . $fileName;
+            $data['file'] = $this->uploadPdf($request['file'], '/pdf/news');
         }
 
         $news = News::create($data);

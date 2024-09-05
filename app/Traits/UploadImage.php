@@ -29,6 +29,20 @@ trait UploadImage
         }
     }
 
+    public function uploadPdf($pdf, $path)
+    {
+
+        $pdf = explode(',', $pdf)[1];
+        $pdfdata = base64_decode($pdf);
+        $f = finfo_open();
+        $mime_type = finfo_buffer($f, $pdfdata, FILEINFO_MIME_TYPE);
+        $type = explode('/', $mime_type)[1];
+        $filename = time() . Str::random(2) . '.' . $type;
+        File::put(public_path() . $path . $filename, $pdfdata);
+
+        return $path . $filename;
+    }
+
     public function uploadPicture($picture, $path)
     {
 
