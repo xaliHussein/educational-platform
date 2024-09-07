@@ -58,19 +58,22 @@ class NewsController extends Controller
         $request = $request->json()->all();
         $validator = Validator::make($request, [
             'text' => 'required|string|max:1250',
+            'filename' => 'string|max:100',
         ], [
             'text.required' => 'يرجى ادخال  النص',
             'text.max' => 'الحد الاقصى لعدد الاحرف هوه 1250 حرف',
+            'filename.max' => 'الحد الاقصى لعدد الاحرف هوه 100 حرف',
         ]);
         if ($validator->fails()) {
             return $this->send_response(400, "حصل خطأ في المدخلات", $validator->errors(), []);
         }
         $data = [];
         $data['text'] = $request['text'];
+        $data['filename'] = $request['filename'];
         $data['user_id'] = auth()->user()->id;
 
         if (isset($request['file'])) {
-            $data['file'] = $this->uploadPdf($request['file'], '/pdf/news');
+            $data['file'] = $this->uploadPdf($request['file'], '/pdf/news/');
         }
 
         $news = News::create($data);
@@ -78,7 +81,7 @@ class NewsController extends Controller
         if (isset($request['images'])) {
             foreach ($request['images'] as $image) {
                 $news->images()->create([
-                    "image_path" => $this->uploadPicture($image, '/images/news'),
+                    "image_path" => $this->uploadPicture($image, '/images/news/'),
                 ]);
             }
         }

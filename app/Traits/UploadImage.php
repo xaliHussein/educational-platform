@@ -23,7 +23,7 @@ trait UploadImage
             $f = finfo_open();
             $mime_type = finfo_buffer($f, $imgdata, FILEINFO_MIME_TYPE);
             $type = explode('/', $mime_type)[1];
-            $filename = time() . Str::random(2) . '.' . $type;
+            $filename = time() . Str::random(10) . '.' . $type;
             File::put(public_path() . $path . $filename, $imgdata);
             array_push($names, $path . $filename);
         }
@@ -37,7 +37,7 @@ trait UploadImage
         $f = finfo_open();
         $mime_type = finfo_buffer($f, $pdfdata, FILEINFO_MIME_TYPE);
         $type = explode('/', $mime_type)[1];
-        $filename = time() . Str::random(2) . '.' . $type;
+        $filename = time() . Str::random(10) . '.' . $type;
         File::put(public_path() . $path . $filename, $pdfdata);
 
         return $path . $filename;
@@ -87,7 +87,7 @@ trait UploadImage
 
         // Generate a filename and save the image as JPEG with compression
 
-        $filename = time() . Str::random(2) . '.' . $type;
+        $filename = time() . Str::random(10) . '.' . $type;
         $filePath = public_path() . $path . $filename;
 
         // Save the image with a higher quality setting

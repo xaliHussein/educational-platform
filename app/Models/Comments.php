@@ -33,12 +33,13 @@ class Comments extends Model
         return $this->hasMany(Comments::class, 'parent_comment_id');
     }
 
-    protected static function boot()
-    {
-        parent::boot();
+    // protected static function boot()
+    // {
 
-        static::deleting(function ($comment) {
-            $comment->children()->delete();
-        });
-    }
+    //     parent::boot();
+
+    //     static::deleting(function ($comment) {
+    //         $comment->children()->delete();
+    //     });
+    // }
 }
