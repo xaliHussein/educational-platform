@@ -8,8 +8,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class News extends Model
 {
-    use HasFactory;
-
     use HasFactory,Uuids;
     protected $guarded = [];
 

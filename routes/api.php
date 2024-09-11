@@ -12,6 +12,7 @@ use App\Http\Controllers\EnrollmentsController;
 use App\Http\Controllers\PurchaseCodeController;
 use App\Http\Controllers\CourseCategoryController;
 use App\Http\Controllers\CommentsController;
+use App\Http\Controllers\QuestionController;
 
 /*
 |--------------------------------------------------------------------------
@@ -98,6 +99,21 @@ Route::middleware(['auth:api'])->group(function () {
             Route::delete('delete_lessons', 'deleteLessons');
             Route::post('upload_vedio_lessons', 'uploadVedioLessons');
             Route::delete('delete_vedio_lessons', 'deleteVedioLessons');
+        });
+
+        Route::controller(QuestionController::class)->group(function () {
+
+            Route::get('get_question', 'getQuestion');
+            Route::post('add_question', 'addQuestion');
+            Route::post('show_result_question', 'showResultQuestion');
+            Route::delete('delete_question', 'deleteQuestion');
+            Route::put('edit_question', 'editQuestion');
+
+            Route::get('get_categories_question', 'getCategoriesQuestion');
+            Route::post('add_categories_question', 'addCategoriesQuestion');
+            Route::delete('delete_categories_question', 'deleteCategoriesQuestion');
+            Route::put('edit_categories_question', 'editCategoriesQuestion');
+
         });
 
 
