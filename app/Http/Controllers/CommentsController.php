@@ -120,7 +120,25 @@ class CommentsController extends Controller
         $comment = Comments::create($data);
         return $this->send_response(200, 'تم عملية اضافة رد تعليق بنجاح', [], Comments::find($comment->id));
     }
+
     public function deleteComment(Request $request)
+    {
+        $request = $request->json()->all();
+        $validator = Validator::make($request, [
+           'comment_id' => 'required|exists:comments,id',
+        ], [
+            'comment_id.required' => 'يرجى ادخال  تعليق',
+            'comment_id.exists' =>  'التعليق غير موجود',
+        ]);
+
+        $comment = Comments::find($request['comment_id']);
+        $comment->children()->delete();
+        $comment->delete();
+
+        return $this->send_response(200, 'تم عملية حذف التعليق بنجاح', [], []);
+    }
+
+    public function deleteReplyComment(Request $request)
     {
         $request = $request->json()->all();
         $validator = Validator::make($request, [
@@ -134,6 +152,58 @@ class CommentsController extends Controller
         $comment->delete();
         return $this->send_response(200, 'تم عملية حذف التعليق بنجاح', [], []);
     }
+
+    public function editComment(Request $request)
+    {
+        $request = $request->json()->all();
+        $validator = Validator::make($request, [
+           'content' => 'required|string|max:500',
+           'id' => 'required|exists:comments,id',
+        ], [
+            'content.required' => 'يرجى ادخال  تعليق',
+            'content.max' => 'الحد الاقصى لعدد الاحرف هوه 500 حرف',
+            'id.required' => 'لم يتم اضافة معرف التعليق',
+            'id.exists' => 'هذا التعليق غير موجود',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->send_response(400, "حصل خطأ في المدخلات", $validator->errors(), []);
+        }
+        $comment = Comments::find($request['id']);
+        $data = [];
+        $data['content'] = $request['content'];
+        $comment->update($data);
+
+        return $this->send_response(200, 'تم عملية تعديل التعليق بنجاح', [], Comments::find($comment->id));
+    }
+
+    // public function editReplyComment(Request $request)
+    // {
+    //     $request = $request->json()->all();
+    //     $validator = Validator::make($request, [
+    //        'content' => 'required|string|max:500',
+    //        'news_id' => 'required|exists:news,id',
+    //        'parent_comment_id' => 'required|exists:comments,id',
+    //     ], [
+    //         'content.required' => 'يرجى ادخال  تعليق',
+    //         'content.max' => 'الحد الاقصى لعدد الاحرف هوه 500 حرف',
+    //         'news_id.required' => 'لم يتم اضافة معرف',
+    //         'news_id.exists' => 'هذا الخبر غير موجود',
+    //         'parent_comment_id.required' => 'لم يتم اضافة معرف التعليق الاصلي',
+    //         'parent_comment_id.exists' => 'التعليق الاصلي غير موجود',
+    //     ]);
+
+
+    //     $data = [];
+    //     $data['content'] = $request['content'];
+    //     $data['news_id'] = $request['news_id'];
+    //     $data['parent_comment_id'] = $request['parent_comment_id'];
+    //     $data['user_id'] = auth()->user()->id;
+    //     $data['is_professor'] = auth()->user()->user_type == 0 || auth()->user()->user_type == 1 ? true : false;
+
+    //     $comment = Comments::create($data);
+    //     return $this->send_response(200, 'تم عملية اضافة رد تعليق بنجاح', [], Comments::find($comment->id));
+    // }
 
 
 }

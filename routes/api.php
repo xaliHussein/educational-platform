@@ -103,13 +103,10 @@ Route::middleware(['auth:api'])->group(function () {
 
         Route::controller(QuestionController::class)->group(function () {
 
-            Route::get('get_question', 'getQuestion');
             Route::post('add_question', 'addQuestion');
-            Route::post('show_result_question', 'showResultQuestion');
             Route::delete('delete_question', 'deleteQuestion');
             Route::put('edit_question', 'editQuestion');
 
-            Route::get('get_categories_question', 'getCategoriesQuestion');
             Route::post('add_categories_question', 'addCategoriesQuestion');
             Route::delete('delete_categories_question', 'deleteCategoriesQuestion');
             Route::put('edit_categories_question', 'editCategoriesQuestion');
@@ -160,6 +157,15 @@ Route::middleware(['auth:api'])->group(function () {
         Route::post('add_comment', 'addComment');
         Route::post('reply_comment', 'replyComment');
         Route::delete('delete_comment', 'deleteComment');
+        Route::delete('delete_reply_comment', 'deleteReplyComment');
+        Route::put('edit_comment', 'editComment');
 
+    });
+
+    Route::controller(QuestionController::class)->group(function () {
+
+        Route::get('get_question', 'getQuestion');
+        Route::post('show_result_question', 'showResultQuestion');
+        Route::get('get_categories_question', 'getCategoriesQuestion');
     });
 });
