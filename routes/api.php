@@ -13,6 +13,7 @@ use App\Http\Controllers\PurchaseCodeController;
 use App\Http\Controllers\CourseCategoryController;
 use App\Http\Controllers\CommentsController;
 use App\Http\Controllers\QuestionController;
+use App\Http\Controllers\LessonsCommentsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -159,6 +160,15 @@ Route::middleware(['auth:api'])->group(function () {
         Route::delete('delete_comment', 'deleteComment');
         Route::delete('delete_reply_comment', 'deleteReplyComment');
         Route::put('edit_comment', 'editComment');
+
+    });
+    Route::controller(LessonsCommentsController::class)->group(function () {
+        Route::get('get_user_lessons_comments', 'getUserLessonsComments');
+        Route::post('add_lessons_comment', 'addLessonsComment');
+        Route::post('reply_lessons_comment', 'replyLessonsComment');
+        Route::delete('delete_lessons_comment', 'deleteLessonsComment');
+        Route::delete('delete_reply_lessons_comment', 'deleteReplyLessonsComment');
+        Route::put('edit_lessons_comment', 'editLessonsComment');
 
     });
 

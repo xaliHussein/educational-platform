@@ -7,16 +7,16 @@ use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-class Comments extends Model
+class LessonsComments extends Model
 {
     use HasFactory;
     use Uuids;
 
     protected $guarded = [];
     protected $with = ['User'];
-    public function News()
+    public function Lessons()
     {
-        return $this->belongsTo(News::class, 'news_id');
+        return $this->belongsTo(Lessons::class, 'lessons_id');
     }
 
     public function User()
@@ -26,12 +26,12 @@ class Comments extends Model
 
     public function parentComment()
     {
-        return $this->belongsTo(Comments::class, 'parent_comment_id');
+        return $this->belongsTo(LessonsComments::class, 'parent_comment_id');
     }
 
     public function children()
     {
-        return $this->hasMany(Comments::class, 'parent_comment_id');
+        return $this->hasMany(LessonsComments::class, 'parent_comment_id');
     }
 
 

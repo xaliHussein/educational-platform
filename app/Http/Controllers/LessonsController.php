@@ -51,7 +51,7 @@ class LessonsController extends Controller
     public function getLessonsDashboard()
     {
 
-        if(auth()->user()->user_type == 1) {
+        if (auth()->user()->user_type == 1) {
             $lessons = Lessons::where("user_id", auth()->user()->id);
         } else {
             $lessons = Lessons::select("*");
@@ -151,7 +151,7 @@ class LessonsController extends Controller
             'category_id.exists' => 'اسم فئة الكورس غير موجود',
         ];
         if ($request['upload_type'] == 1) {
-            if(isset($request['image'])) {
+            if (isset($request['image'])) {
                 $data['image'] = $this->uploadPicture($request['image'], '/images/lessons/');
             }
             $rules['video'] = 'required';
@@ -169,6 +169,9 @@ class LessonsController extends Controller
             return $this->send_response(400, "حصل خطأ في المدخلات", $validator->errors(), []);
         }
 
+        if (isset($request['file'])) {
+            $data['file'] = $this->uploadPdf($request['file'], '/pdf/lessons/');
+        }
         $data['title'] = $request['title'];
         $data['user_id'] = auth()->user()->id;
         $data['content'] = $request['content'];

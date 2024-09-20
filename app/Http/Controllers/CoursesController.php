@@ -46,12 +46,14 @@ class CoursesController extends Controller
     {
         $request = $request->json()->all();
         $validator = Validator::make($request, [
-            'title' => 'required|unique:courses,title',
+            'title' => 'required|string|max:100|unique:courses,title',
             'image' => 'required',
         ], [
             'title.required' => 'يرجى ادخال اسم الكورس',
+            'title.max' => 'الحد الاقصى لعدد الاحرف هوه 100 حرف',
             'title.unique' => 'اسم الكورس مستخدم',
             'image.required' => 'يرجى اضافة صورة الكورس',
+
         ]);
         if ($validator->fails()) {
             return $this->send_response(400, "حصل خطأ في المدخلات", $validator->errors(), []);

@@ -2,21 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\News;
-use App\Models\User;
-use App\Models\Comments;
 use App\Traits\Filter;
 use App\Traits\Search;
 use App\Traits\OrderBy;
 use App\Traits\Pagination;
-use Illuminate\Support\Str;
 use App\Traits\SendResponse;
-use Illuminate\Http\Request;
+use App\Models\User;
+use App\Models\LessonsComments;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
 
-class CommentsController extends Controller
+class LessonsCommentsController extends Controller
 {
     use SendResponse;
     use Pagination;
@@ -24,34 +22,34 @@ class CommentsController extends Controller
     use OrderBy;
     use Search;
 
-    public function getUserComments()
+    public function getUserLessonsComments()
     {
         $isProfessor = auth()->user()->user_type == 0 || auth()->user()->user_type == 1 ? true : false;
         if ($isProfessor) {
-            $comments = Comments::where("news_id", $_GET["news_id"])
-                ->whereNull('parent_comment_id') // Only top-level comments
-                ->orderBy('created_at', 'ASC') // Ensure top-level comments are ordered
+            $lessons_comments = LessonsComments::where("lessons_id", $_GET["lessons_id"])
+                ->whereNull('parent_comment_id') // Only top-level lessons_comments
+                ->orderBy('created_at', 'ASC') // Ensure top-level lessons_comments are ordered
                 ->with(['children' => function ($query) {
-                    $query->orderBy('created_at', 'ASC'); // Order child comments by creation date
+                    $query->orderBy('created_at', 'ASC'); // Order child lessons_comments by creation date
                 }]);
         } else {
-            $comments = Comments::where('news_id', $_GET['news_id'])
-            ->whereNull('parent_comment_id') // Only top-level comments
+            $lessons_comments = LessonsComments::where('lessons_id', $_GET['lessons_id'])
+            ->whereNull('parent_comment_id') // Only top-level lessons_comments
             ->where(function ($query) {
-                $query->where('user_id', auth()->id()) // Student's own top-level comments
+                $query->where('user_id', auth()->id()) // Student's own top-level lessons_comments
                     ->orWhereHas('children', function ($subQuery) {
-                        // Only show professor's replies to the student's comments
+                        // Only show professor's replies to the student's lessons_comments
                         $subQuery->where('is_professor', true)
                             ->whereIn('parent_comment_id', function ($q) {
                                 $q->select('id')
-                                    ->from('comments')
-                                    ->where('user_id', auth()->id()); // The student's comments
+                                    ->from('lessons_comments')
+                                    ->where('user_id', auth()->id()); // The student's lessons_comments
                             });
                     });
             })
             ->orderBy('created_at', 'ASC')
             ->with(['children' => function ($query) {
-                $query->orderBy('created_at', 'ASC'); // Order child comments by creation date
+                $query->orderBy('created_at', 'ASC'); // Order child lessons_comments by creation date
             }]);
         }
 
@@ -62,21 +60,21 @@ class CommentsController extends Controller
             $_GET['limit'] = 10;
         }
 
-        $res = $this->paging($comments->orderBy("created_at", "ASC"), $_GET['skip'], $_GET['limit']);
+        $res = $this->paging($lessons_comments->orderBy("created_at", "ASC"), $_GET['skip'], $_GET['limit']);
         return $this->send_response(200, 'تم احضار جميع التعاليق بنجاح', [], $res["model"], null, $res["count"]);
     }
 
-    public function addComment(Request $request)
+    public function addLessonsComment(Request $request)
     {
         $request = $request->json()->all();
         $validator = Validator::make($request, [
            'content' => 'required|string|max:500',
-           'news_id' => 'required|exists:news,id',
+           'lessons_id' => 'required|exists:lessons,id',
         ], [
             'content.required' => 'يرجى ادخال  تعليق',
             'content.max' => 'الحد الاقصى لعدد الاحرف هوه 500 حرف',
-            'news_id.required' => 'لم يتم اضافة معرف',
-            'news_id.exists' => 'هذا الخبر غير موجود',
+            'lessons_id.required' => 'لم يتم اضافة معرف',
+            'lessons_id.exists' => 'هذا الدرس غير موجود',
         ]);
 
         if ($validator->fails()) {
@@ -84,27 +82,27 @@ class CommentsController extends Controller
         }
         $data = [];
         $data['content'] = $request['content'];
-        $data['news_id'] = $request['news_id'];
+        $data['lessons_id'] = $request['lessons_id'];
         $data['user_id'] = auth()->user()->id;
         $data['is_professor'] = auth()->user()->user_type == 0 || auth()->user()->user_type == 1 ? true : false;
 
-        $comment = Comments::create($data);
+        $lessons_comment = LessonsComments::create($data);
 
-        return $this->send_response(200, 'تم عملية اضافة تعليق بنجاح', [], Comments::find($comment->id));
+        return $this->send_response(200, 'تم عملية اضافة تعليق بنجاح', [], LessonsComments::find($lessons_comment->id));
     }
 
-    public function replyComment(Request $request)
+    public function replyLessonsComment(Request $request)
     {
         $request = $request->json()->all();
         $validator = Validator::make($request, [
            'content' => 'required|string|max:500',
-           'news_id' => 'required|exists:news,id',
-           'parent_comment_id' => 'required|exists:comments,id',
+           'lessons_id' => 'required|exists:lessons,id',
+           'parent_comment_id' => 'required|exists:lessons_comments,id',
         ], [
             'content.required' => 'يرجى ادخال  تعليق',
             'content.max' => 'الحد الاقصى لعدد الاحرف هوه 500 حرف',
-            'news_id.required' => 'لم يتم اضافة معرف',
-            'news_id.exists' => 'هذا الخبر غير موجود',
+            'lessons_id.required' => 'لم يتم اضافة معرف',
+            'lessons_id.exists' => 'هذا الدرس غير موجود',
             'parent_comment_id.required' => 'لم يتم اضافة معرف التعليق الاصلي',
             'parent_comment_id.exists' => 'التعليق الاصلي غير موجود',
         ]);
@@ -112,53 +110,53 @@ class CommentsController extends Controller
 
         $data = [];
         $data['content'] = $request['content'];
-        $data['news_id'] = $request['news_id'];
+        $data['lessons_id'] = $request['lessons_id'];
         $data['parent_comment_id'] = $request['parent_comment_id'];
         $data['user_id'] = auth()->user()->id;
         $data['is_professor'] = auth()->user()->user_type == 0 || auth()->user()->user_type == 1 ? true : false;
 
-        $comment = Comments::create($data);
-        return $this->send_response(200, 'تم عملية اضافة رد تعليق بنجاح', [], Comments::find($comment->id));
+        $lessons_comment = LessonsComments::create($data);
+        return $this->send_response(200, 'تم عملية اضافة رد تعليق بنجاح', [], LessonsComments::find($lessons_comment->id));
     }
 
-    public function deleteComment(Request $request)
+    public function deleteLessonsComment(Request $request)
     {
         $request = $request->json()->all();
         $validator = Validator::make($request, [
-           'comment_id' => 'required|exists:comments,id',
+           'comment_id' => 'required|exists:lessons_comments,id',
         ], [
             'comment_id.required' => 'يرجى ادخال  تعليق',
             'comment_id.exists' =>  'التعليق غير موجود',
         ]);
 
-        $comment = Comments::find($request['comment_id']);
-        $comment->children()->delete();
-        $comment->delete();
+        $lessons_comment = LessonsComments::find($request['comment_id']);
+        $lessons_comment->children()->delete();
+        $lessons_comment->delete();
 
         return $this->send_response(200, 'تم عملية حذف التعليق بنجاح', [], []);
     }
 
-    public function deleteReplyComment(Request $request)
+    public function deleteReplyLessonsComment(Request $request)
     {
         $request = $request->json()->all();
         $validator = Validator::make($request, [
-           'comment_id' => 'required|exists:comments,id',
+           'comment_id' => 'required|exists:lessons_comments,id',
         ], [
             'comment_id.required' => 'يرجى ادخال  تعليق',
             'comment_id.exists' =>  'التعليق غير موجود',
         ]);
 
-        $comment = Comments::find($request['comment_id']);
-        $comment->delete();
+        $lessons_comment = LessonsComments::find($request['comment_id']);
+        $lessons_comment->delete();
         return $this->send_response(200, 'تم عملية حذف التعليق بنجاح', [], []);
     }
 
-    public function editComment(Request $request)
+    public function editLessonsComment(Request $request)
     {
         $request = $request->json()->all();
         $validator = Validator::make($request, [
            'content' => 'required|string|max:500',
-           'id' => 'required|exists:comments,id',
+           'id' => 'required|exists:lessons_comments,id',
         ], [
             'content.required' => 'يرجى ادخال  تعليق',
             'content.max' => 'الحد الاقصى لعدد الاحرف هوه 500 حرف',
@@ -169,12 +167,11 @@ class CommentsController extends Controller
         if ($validator->fails()) {
             return $this->send_response(400, "حصل خطأ في المدخلات", $validator->errors(), []);
         }
-        $comment = Comments::find($request['id']);
+        $lessons_comment = LessonsComments::find($request['id']);
         $data = [];
         $data['content'] = $request['content'];
-        $comment->update($data);
+        $lessons_comment->update($data);
 
-        return $this->send_response(200, 'تم عملية تعديل التعليق بنجاح', [], Comments::find($comment->id));
+        return $this->send_response(200, 'تم عملية تعديل التعليق بنجاح', [], LessonsComments::find($lessons_comment->id));
     }
-
 }
