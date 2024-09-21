@@ -198,4 +198,35 @@ class LessonsController extends Controller
         $lessons->delete();
         return $this->send_response(200, 'تم حذف الدرس بنجاح', [], []);
     }
+    // تحويل ملف بي دي اف الى صيغة بيس 64
+    public function uploadFileLessons(Request $request)
+    {
+        $data = $request->all();
+
+        $validator = Validator::make($data, [
+            'file' => 'required|mimes:pdf|max:2048',
+        ], [
+            'file.required' => 'حقل الملف مطلوب',
+            'file.max' => 'الحد الأقصى لحجم الملف هو 2MB',
+            'file.mimes' => 'هذا الملف غير مدعوم',
+        ]);
+
+        if ($validator->fails()) {
+            return $this->send_response(400, "حصل خطأ في المدخلات", $validator->errors(), []);
+        }
+
+        if ($request->hasFile('file')) {
+            $file = $request->file('file');
+            $fileContent = file_get_contents($file->getPathname());
+            $base64File = base64_encode($fileContent);
+            $base64FileWithFormat = 'data:' . $file->getMimeType() . ';base64,' . $base64File;
+            return response()->json([
+                'file' => $base64FileWithFormat,
+                'filename' => $file->getClientOriginalName(),
+                'message' => 'File uploaded successfully',
+            ], 200);
+        }
+
+        return response()->json(['error' => 'File upload failed'], 400);
+    }
 }

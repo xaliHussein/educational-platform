@@ -99,6 +99,7 @@ Route::middleware(['auth:api'])->group(function () {
             Route::put('edit_lessons', 'editLessons');
             Route::delete('delete_lessons', 'deleteLessons');
             Route::post('upload_vedio_lessons', 'uploadVedioLessons');
+            Route::post('upload_file_lessons', 'uploadFileLessons');
             Route::delete('delete_vedio_lessons', 'deleteVedioLessons');
         });
 
