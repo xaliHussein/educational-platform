@@ -2,17 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Traits\Filter;
 use App\Traits\Search;
 use App\Traits\OrderBy;
 use App\Traits\Pagination;
 use App\Traits\SendResponse;
-use App\Models\User;
+use Illuminate\Http\Request;
+use App\Events\CommentLessons;
 use App\Models\LessonsComments;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class LessonsCommentsController extends Controller
 {
@@ -87,7 +88,7 @@ class LessonsCommentsController extends Controller
         $data['is_professor'] = auth()->user()->user_type == 0 || auth()->user()->user_type == 1 ? true : false;
 
         $lessons_comment = LessonsComments::create($data);
-
+        broadcast(new CommentLessons($lessons_comment, $lessons_comment->lessons_id));
         return $this->send_response(200, 'تم عملية اضافة تعليق بنجاح', [], LessonsComments::find($lessons_comment->id));
     }
 
@@ -116,6 +117,7 @@ class LessonsCommentsController extends Controller
         $data['is_professor'] = auth()->user()->user_type == 0 || auth()->user()->user_type == 1 ? true : false;
 
         $lessons_comment = LessonsComments::create($data);
+        broadcast(new CommentLessons($lessons_comment, $lessons_comment->lessons_id));
         return $this->send_response(200, 'تم عملية اضافة رد تعليق بنجاح', [], LessonsComments::find($lessons_comment->id));
     }
 
@@ -171,6 +173,7 @@ class LessonsCommentsController extends Controller
         $data = [];
         $data['content'] = $request['content'];
         $lessons_comment->update($data);
+        broadcast(new CommentLessons($lessons_comment, $lessons_comment->lessons_id));
 
         return $this->send_response(200, 'تم عملية تعديل التعليق بنجاح', [], LessonsComments::find($lessons_comment->id));
     }

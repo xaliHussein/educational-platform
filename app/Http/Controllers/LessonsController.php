@@ -195,6 +195,10 @@ class LessonsController extends Controller
             $video_path = public_path() . $lessons->video;
             unlink($video_path);
         }
+        if ($lessons->file != null) {
+            $file_path = public_path() . $lessons->file;
+            unlink($file_path);
+        }
         $lessons->delete();
         return $this->send_response(200, 'تم حذف الدرس بنجاح', [], []);
     }

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\News;
 use App\Models\User;
 use App\Models\Comments;
+use App\Events\CommentNews;
 use App\Traits\Filter;
 use App\Traits\Search;
 use App\Traits\OrderBy;
@@ -90,6 +91,8 @@ class CommentsController extends Controller
 
         $comment = Comments::create($data);
 
+        broadcast(new CommentNews($comment,$comment->news_id));
+
         return $this->send_response(200, 'تم عملية اضافة تعليق بنجاح', [], Comments::find($comment->id));
     }
 
@@ -118,6 +121,7 @@ class CommentsController extends Controller
         $data['is_professor'] = auth()->user()->user_type == 0 || auth()->user()->user_type == 1 ? true : false;
 
         $comment = Comments::create($data);
+        broadcast(new CommentNews($comment,$comment->news_id));
         return $this->send_response(200, 'تم عملية اضافة رد تعليق بنجاح', [], Comments::find($comment->id));
     }
 
@@ -173,6 +177,8 @@ class CommentsController extends Controller
         $data = [];
         $data['content'] = $request['content'];
         $comment->update($data);
+
+        broadcast(new CommentNews($comment,$comment->news_id));
 
         return $this->send_response(200, 'تم عملية تعديل التعليق بنجاح', [], Comments::find($comment->id));
     }

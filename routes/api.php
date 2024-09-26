@@ -4,15 +4,16 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NewsController;
 use App\Http\Controllers\UsersController;
+use Illuminate\Support\Facades\Broadcast;
 use App\Http\Controllers\BannersController;
 use App\Http\Controllers\CoursesController;
 use App\Http\Controllers\LessonsController;
+use App\Http\Controllers\CommentsController;
+use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\StatisticsController;
 use App\Http\Controllers\EnrollmentsController;
 use App\Http\Controllers\PurchaseCodeController;
 use App\Http\Controllers\CourseCategoryController;
-use App\Http\Controllers\CommentsController;
-use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\LessonsCommentsController;
 
 /*
@@ -44,7 +45,7 @@ route::post("send_code_forgot_password", [UsersController::class, "sendCodeForgo
 route::post("check_code_forgot_password", [UsersController::class, "checkCodeForgotPassword"]);
 route::post("reset_password", [UsersController::class, "resetPassword"]);
 
-
+Broadcast::routes(['middleware' => ['auth:api']]);
 Route::middleware(['auth:api'])->group(function () {
 
 
