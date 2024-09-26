@@ -16,16 +16,18 @@ class CommentNews
 
     public $comment;
     public $newsId;
+    public $studentId;
 
-    public function __construct($comment, $newsId)
+    public function __construct($comment, $newsId,$studentId)
     {
         $this->comment = $comment;
         $this->newsId = $newsId;
+        $this->studentId = $studentId;
     }
 
     // Use PrivateChannel to ensure authorization
     public function broadcastOn()
     {
-        return new PrivateChannel('news.' . $this->newsId);
+        return new PrivateChannel('news.' . $this->newsId . '.' . $this->studentId);
     }
 }

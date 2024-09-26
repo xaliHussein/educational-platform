@@ -91,7 +91,7 @@ class CommentsController extends Controller
 
         $comment = Comments::create($data);
 
-        broadcast(new CommentNews($comment,$comment->news_id));
+        broadcast(new CommentNews($comment,$comment->news_id,auth()->user()->id));
 
         return $this->send_response(200, 'تم عملية اضافة تعليق بنجاح', [], Comments::find($comment->id));
     }
@@ -121,7 +121,7 @@ class CommentsController extends Controller
         $data['is_professor'] = auth()->user()->user_type == 0 || auth()->user()->user_type == 1 ? true : false;
 
         $comment = Comments::create($data);
-        broadcast(new CommentNews($comment,$comment->news_id));
+        broadcast(new CommentNews($comment,$comment->news_id,auth()->user()->id));
         return $this->send_response(200, 'تم عملية اضافة رد تعليق بنجاح', [], Comments::find($comment->id));
     }
 
