@@ -30,9 +30,6 @@ use App\Http\Controllers\LessonsCommentsController;
 
 
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
 // Route::get('pamentCheck', [EnrollmentsController::class, "pamentCheck"])->name('redirect');
 
 route::post("login", [UsersController::class, "login"]);

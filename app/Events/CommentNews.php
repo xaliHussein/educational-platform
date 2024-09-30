@@ -10,7 +10,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class CommentNews
+class CommentNews implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -26,6 +26,12 @@ class CommentNews
     }
 
     // Use PrivateChannel to ensure authorization
+      /**
+     * Get the channels the event should broadcast on.
+     *
+     * @return \Illuminate\Broadcasting\Channel|array
+     */
+
     public function broadcastOn()
     {
         return new PrivateChannel('news.' . $this->newsId . '.' . $this->studentId);

@@ -2,6 +2,8 @@
 
 use App\Models\News;
 use App\Models\Lessons;
+use App\Models\Comments;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -20,48 +22,14 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 });
 
 
-Broadcast::channel('news.{newsId}', function ($user, $newsId, $studentId) {
-    // Check if the user is a professor
-    $isProfessor = $user->user_type == 0 || $user->user_type == 1;
+Broadcast::channel('news.{newsId}.{studentId}', function ($user, $newsId, $studentId) {
+    $news = News::find($newsId);
 
-    if ($isProfessor) {
-        // Professors can listen if they are responding to a specific student's comments
-        return Comments::where('news_id', $newsId)
-            ->where('is_professor', true) // Ensure it's a professor's comment
-            ->where('user_id', $user->id) // Check if the professor is the one commenting
-            ->whereIn('parent_comment_id', function ($query) use ($studentId) {
-                $query->select('id')
-                    ->from('comments')
-                    ->where('news_id', $newsId)
-                    ->where('user_id', $studentId); // Ensure it's the student's comment
-            })
-            ->exists();
-    } else {
-        // Students can listen only if they are the specific student
-        return $user->id === (int)$studentId;
-    }
+    return $user->id === $studentId || $user->id === $news->user_id;
 });
 
-Broadcast::channel('lesson.{lessonId}', function ($user, $lessonId, $studentId) {
 
-    // Check if the user is a professor
-    $isProfessor = $user->user_type == 0 || $user->user_type == 1;
-
-    if ($isProfessor) {
-        // Professors can listen if they are responding to a specific student's comments
-        return Lessons::where('lessons_id', $lessonId)
-            ->where('is_professor', true) // Ensure it's a professor's comment
-            ->where('user_id', $user->id) // Check if the professor is the one commenting
-            ->whereIn('parent_comment_id', function ($query) use ($studentId) {
-                $query->select('id')
-                    ->from('lessons_comments')
-                    ->where('lessons_id', $lessonId)
-                    ->where('user_id', $studentId); // Ensure it's the student's comment
-            })
-            ->exists();
-    } else {
-        // Students can listen only if they are the specific student
-        return $user->id === (int)$studentId;
-    }
-
+Broadcast::channel('lesson.{lessonId}.{studentId}', function ($user, $lessonId, $studentId) {
+    $lessons = Lessons::find($lessonId);
+    return $user->id === $studentId || $user->id === $lessons->user_id;
 });

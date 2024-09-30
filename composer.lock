@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bffa401659c808056366a367ef449ca2",
+    "content-hash": "c1a21595e78f6b57b02562bf2087c380",
     "packages": [
         {
             "name": "beyondcode/laravel-websockets",
